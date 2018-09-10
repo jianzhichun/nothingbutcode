@@ -1,0 +1,10 @@
+<mat-card class="self-card">
+  <img mat-card-image src="{{me.avatar_url}}" alt="{{me.name || me.login}}">
+  <mat-card-header>
+    <mat-card-title>{{me.name || me.login}}</mat-card-title>
+    <mat-card-subtitle>{{me.email}}</mat-card-subtitle>
+    <button mat-icon-button (click)="refresh()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-card-header>
+</mat-card>

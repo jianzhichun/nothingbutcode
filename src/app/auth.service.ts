@@ -3,10 +3,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { LocalStorage, LocalStorageService } from 'ngx-store';
 
+import { github } from '../environments/environment';
 
-const client_id = "45d2ac73462e936bb331",
-  client_secret = "e1c356563c045a7273f047ec3c8312857b161dc2",
-  scope = "user,public_repo",
+import { Observable, of, Subject } from 'rxjs';
+import { map, tap, mergeMap, filter, first, groupBy } from 'rxjs/operators';
+
+const { client_id, client_secret, scope } = github,
   Query = {
     parse(search = window.location.search) {
       if (!search) return {}
@@ -36,10 +38,41 @@ export class AuthService {
   @LocalStorage() accessToken: string;
   @LocalStorage() user: { [key: string]: any };
 
-  constructor(private http: HttpClient, private localStorage: LocalStorageService) { }
+  private loginSuccess: Subject<boolean> = new Subject();
 
-  login() {
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=${scope}`;
+  constructor(private http: HttpClient, private localStorage: LocalStorageService) {
+    if (this.needlogin()) {
+      let query = Query.parse(),
+        code = query['code'];
+      if (!code) {
+        window.location.href = `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=${scope}`;
+      }
+
+      delete query['code'];
+      let search = Query.stringify(query);
+      history.replaceState(
+        {}, '',
+        `${window.location.origin}${window.location.pathname}${search}${window.location.hash}`
+      );
+
+      this.http.post(
+        'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token', null,
+        {
+          headers: { Accept: 'application/json' },
+          params: { client_id, client_secret, code },
+        }
+      ).pipe(
+        filter(data => 'access_token' in data),
+        map(data => data['access_token']),
+        tap(accessToken => this.accessToken = accessToken),
+        mergeMap(accessToken =>
+          this.http.get<{ [key: string]: any }>(`https://api.github.com/user?access_token=${accessToken}`)
+        )
+      ).pipe(
+        filter(user => null != user),
+        tap(user => this.user = user)
+      ).subscribe(user => this.loginSuccess.next(true));
+    } 
   }
 
   logout() {
@@ -47,34 +80,20 @@ export class AuthService {
     this.localStorage.remove('user');
   }
 
-  async isLogin(): Promise<boolean> {
-    if (!this.accessToken || !this.user) {
-      let query = Query.parse(),
-        code = query['code'];
-      if (!code) return false;
+  needlogin(): boolean {
+    return !this.accessToken || !this.user;
+  }
 
-      delete query['code'];
-      let search = Query.stringify(query);
-      history.replaceState({}, '', `${window.location.origin}${window.location.pathname}${search}${window.location.hash}`);
-
-      let data = await this.http.post(
-        'https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token', null,
-        {
-          headers: { Accept: 'application/json' },
-          params: { client_id, client_secret, code },
-        }
-      ).toPromise().then(data => data);
-
-      this.accessToken = data['access_token'];
-      this.user = await this.http
-          .get<{ [key: string]: any }>(`https://api.github.com/user?access_token=${this.accessToken}`)
-          .toPromise().then(user => user);
-    }
-    return true;
+  login(): Observable<boolean> {
+    return this.loginSuccess;
   }
 
   me(): { [key: string]: any } {
     return this.user;
+  }
+
+  notifications(): Observable<any> {
+    return this.http.get(`https://api.github.com/notifications?access_token=${this.accessToken}`);
   }
 
 }

@@ -8,24 +8,32 @@ import { AuthService } from './auth.service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  loginName: string;
+
+  assignables: { [key: string]: string }[];
 
   constructor(private auth: AuthService) { }
 
   ngOnInit() {
-    this.auth.isLogin()
-      .then(success => {
-        if (success) {
-          this.loginName = `${this.auth.me()['login']}`;
-        } else {
-          this.auth.login();
-        }
-      })
+    if (!this.auth.needlogin()) {
+      this.eval();
+    } else {
+      this.auth.login().subscribe(success => this.eval());
+    }
   }
 
-  logout() {
-    this.auth.logout();
-    this.loginName = 'unknown';
-  }
+  eval() {
+    this.auth.notifications()
+      .subscribe(data => {
 
+        this.assignables = data.map(d => {
+          return {
+            'description': `${d['subject']['title']}`,
+            'link': `${d['url']}`
+          };
+        });
+        console.log('====================================');
+        console.log(data);
+        console.log('====================================');
+      });
+  }
 }
