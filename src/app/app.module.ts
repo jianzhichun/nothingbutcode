@@ -1,9 +1,8 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+import { NgModule, forwardRef } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { HttpClientModule } from '@angular/common/http';
-import { WebStorageModule } from 'ngx-store';
 import { RouterModule } from '@angular/router';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -15,23 +14,28 @@ import {
   MatListModule
 } from '@angular/material';
 import { FlexLayoutModule } from "@angular/flex-layout";
-
-import { AuthService } from './auth.service';
-import { SelfComponent } from './self/self.component';
-import { AssignableBufferComponent } from './assignable-buffer/assignable-buffer.component';
-
+import { WebStorageModule } from 'ngx-store';
+import { ThreeModule } from './three/three.module';
+import { UserService } from './auth/auth.domain';
+import { GithubService } from './github/github.service';
+import { GithubOauthComponent } from './github/github-oauth.component';
+import { FloatBallModule } from './float-ball/float-ball.module';
+import { ThreeViewComponent } from './three-view/three-view.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    SelfComponent,
-    AssignableBufferComponent
+    GithubOauthComponent,
+    ThreeViewComponent
   ],
   imports: [
     BrowserModule,
     HttpClientModule,
-    WebStorageModule,
-    RouterModule.forRoot([]),
+    RouterModule.forRoot([
+      { path: '', redirectTo: "three-view", pathMatch: 'full' },
+      { path: 'three-view', component: ThreeViewComponent },
+      { path: 'github/oauth', component: GithubOauthComponent }
+    ]),
 
     BrowserAnimationsModule,
     MatCardModule,
@@ -39,10 +43,15 @@ import { AssignableBufferComponent } from './assignable-buffer/assignable-buffer
     MatButtonToggleModule,
     MatIconModule,
     MatListModule,
-    
-    FlexLayoutModule
+    WebStorageModule,
+    FlexLayoutModule,
+
+    ThreeModule,
+    FloatBallModule
   ],
-  providers: [AuthService],
+  providers: [
+    { provide: UserService, useExisting: forwardRef(() => GithubService) }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

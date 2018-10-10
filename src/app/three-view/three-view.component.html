@@ -1,0 +1,41 @@
+<app-float-ball>
+  <mat-list >
+    <mat-list-item *ngFor="let mesh of meshes">
+      {{mesh.name || ''}}
+    </mat-list-item>
+  </mat-list>
+</app-float-ball>
+
+<three-orbit-controls [rotateSpeed]=1 [zoomSpeed]=1.2 [listeningControlElement]=mainRenderer.renderPane>
+  <three-webgl-renderer #mainRenderer>
+
+    <three-perspective-camera 
+      [fov]="perspectiveCamera.fov" 
+      [near]="perspectiveCamera.near" 
+      [far]="perspectiveCamera.far" 
+      [positionX]="perspectiveCamera.positionX"  
+      [positionY]="perspectiveCamera.positionY"  
+      [positionZ]="perspectiveCamera.positionZ" >
+    </three-perspective-camera>
+    
+    <three-scene>
+
+      <three-point-light 
+        [color]="pointLight.color"
+        [intensity]="pointLight.intensity" 
+        [distance]="pointLight.distance" 
+        [translateX]="pointLight.translateX"  
+        [translateY]="pointLight.translateY"  
+        [translateZ]="pointLight.translateZ" >
+      </three-point-light> 
+
+      <three-obj-loader 
+        (loaded)="loaded($event)"
+        [model]="loadModel.model"
+        [material]='loadModel.material' 
+        [texturePath]="loadModel.texturePath"   
+        [renderer]=mainRenderer>
+      </three-obj-loader>
+    </three-scene>
+  </three-webgl-renderer>
+</three-orbit-controls>

@@ -1,0 +1,15 @@
+<popover-content #pop placement="auto top" [closeOnClickOutside]="true">
+  <h3 class="popover-title" >
+    <span>Hi, {{me.name}} </span> &nbsp; 
+    <a *hasPermission="['anonymous']" (click)="login()">sign in</a>
+    <a *hasPermission="['user']" (click)="logout()">sign out</a>
+  </h3>
+  <ng-content></ng-content>
+</popover-content>
+
+<ngx-float-ball [popover]="pop" 
+  innerCircleDiameter=50 
+  iconDiameter=50 
+  icon="{{me.avatar_url}}"
+  background="#3d3939" >
+</ngx-float-ball>
